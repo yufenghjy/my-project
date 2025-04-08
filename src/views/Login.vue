@@ -113,14 +113,19 @@ const handleLogin = async () => {
     ElMessage.success('登录成功');
     // 保存用户信息到pinia和localStore
     userStore.setUser({
+      id: response.data.data.id,
       name: response.data.data.name,
-      avatar: response.data.data.avatar
+      avatar: response.data.data.avatar,
+      email: response.data.data.email,
+      birthday: response.data.data.birthday,
+      money: response.data.data.money,
     })
     router.push('/home'); 
-  }else{
+  } else {
     ElMessage.error('登录失败');
   }
 };
+
 </script>
 
 <style scoped>

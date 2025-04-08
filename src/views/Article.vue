@@ -39,9 +39,18 @@
 
 <script>
 import * as echarts from 'echarts';
-import { getAuthorListApi } from '@/api/article'; // 假设有一个API获取作者列表
+import { getAuthorListApi } from '@/api/article';
+import { ref, onMounted, inject } from 'vue'; // 导入 inject 和其他必要的 API
 
 export default {
+  setup() {
+    // 使用 inject 获取父组件提供的 handleSelect 方法
+    const handleSelect = inject('handleSelect');
+
+    return {
+      handleSelect // 将 handleSelect 暴露给模板和 methods 使用
+    };
+  },
   data() {
     return {
       authors: [], // 作者数据（需从API获取）
@@ -117,7 +126,10 @@ export default {
     },
     // 跳转作者文章管理页
     goToArticleManagement(authorId) {
-      this.$router.push({ path: `/author/${authorId}` });
+      // 使用 setup 中注入的 handleSelect 方法
+      if (this.handleSelect) {
+        this.handleSelect('article-management');
+      }
     }
   },
   created() {

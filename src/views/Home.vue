@@ -32,23 +32,36 @@
         <div class="user-info">
           <span>登录用户: {{ userStore.userInfo.name }}</span>
         </div>
+        <el-dropdown @command="handleDropdownCommand">
+          <span class="el-dropdown-link">
+            更多<i class="el-icon-arrow-down el-icon--right"></i>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile">个人信息</el-dropdown-item>
+              <el-dropdown-item command="calendar">日历</el-dropdown-item>
+              <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </el-header>
       <el-main class="main-content">
         <el-card shadow="always" style="height: 100%;">
           <div v-if="activeMenu === '1'" class="home-page">
-            <div class="welcome-text">{{ welcomeMessage }}</div>
-            <el-row :gutter="20">
-              <el-col :span="8">
-                <el-card shadow="hover" class="avatar-card">
-                  <div class="avatar">
-                    <img :src="userStore.userInfo.avatar" alt="Avatar" v-if="userStore.userInfo.avatar" />
-                  </div>
-                </el-card>
-              </el-col>
-              <el-col :span="16">
-                <el-calendar></el-calendar>
-              </el-col>
-            </el-row>
+            <div v-if="dropdownCommand === 'profile'" class="profile-info">
+              <div class="avatar-panel">
+                <div class="avatar">
+                  <img :src="userStore.userInfo.avatar" alt="Avatar" v-if="userStore.userInfo.avatar" />
+                </div>
+              </div>
+              <div class="info-panel">
+                <el-table :data="userInfoData" style="width: 100%">
+                  <el-table-column prop="key"  width="180"></el-table-column>
+                  <el-table-column prop="value" ></el-table-column>
+                </el-table>
+              </div>
+            </div>
+            <div v-else class="welcome-text">{{ welcomeMessage }}</div>
           </div>
           <component :is="currentComponent" v-else />
         </el-card>
@@ -58,7 +71,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, provide } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import UserManagement from './UserManagement.vue';
 import Article from './Article.vue';
@@ -70,6 +83,7 @@ const showMenu = computed(() => width.value >= 1000);
 const activeMenu = ref('1');
 const theme = ref('blue');
 const userStore = useUserStore();
+const dropdownCommand = ref('profile'); // 修改: 默认展示个人信息
 
 const sidebarColor = computed(() => theme.value === 'blue' ? '#409EFF' : '#fadb14'); // 修改: 蓝色风格下侧边栏颜色改为蓝色
 const navbarColor = computed(() => theme.value === 'blue' ? '#409EFF' : '#fffbe6'); // 修改: 蓝色风格下导航栏颜色改为蓝色
@@ -91,15 +105,38 @@ const handleSelect = (key) => {
   }
 };
 
+const handleDropdownCommand = (command) => {
+  dropdownCommand.value = command;
+  if (command === 'logout') {
+    // 处理退出登录逻辑
+    console.log('退出登录');
+  }
+};
+
 const setTheme = (newTheme) => {
   theme.value = newTheme;
 };
 
 const welcomeMessage = computed(() => `欢迎，${userStore.userInfo.name}`); // 修改: 使用 userStore.userInfo.username 替代 loggedInUser.value
 
+const formattedBirthday = computed(() => {
+  const birthday = new Date(userStore.userInfo.birthday);
+  return birthday.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+});
+
+const userInfoData = computed(() => [
+  { key: '用户名', value: userStore.userInfo.name },
+  { key: '邮箱', value: userStore.userInfo.email },
+  { key: '生日', value: formattedBirthday.value },
+  { key: '余额', value: userStore.userInfo.money }
+]);
+
 onMounted(() => {
   console.log('当前用户信息:', userStore.userInfo) // 添加调试信息
 })
+
+// 提供 handleSelect 方法给子组件
+provide('handleSelect', handleSelect);
 </script>
 
 <style scoped>
@@ -130,8 +167,8 @@ onMounted(() => {
 }
 
 .welcome-text {
-  text-align: center; 
-  margin-bottom: 20px; 
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 /* 确保 el-submenu 的样式正确 */
@@ -145,5 +182,32 @@ onMounted(() => {
   align-items: center;
   height: 100%;
 }
-</style>
 
+.profile-info,
+.calendar-view {
+  display: flex;
+  align-items: flex-start;
+}
+
+.avatar-panel {
+  flex: 1;
+  margin-right: 20px;
+}
+
+.info-panel {
+  flex: 2;
+}
+
+.avatar {
+  margin-right: 20px;
+}
+
+.user-details {
+  margin-top: 10px;
+  text-align: left;
+}
+
+.calendar-content {
+  flex-grow: 1;
+}
+</style>

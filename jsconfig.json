@@ -2,7 +2,12 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "resolveJsonModule": true, 
+    "allowJs": true,           
+    "esModuleInterop": true,
+    "lib": ["ES2017", "dom"],
+    "target": "ES2017" 
   },
   "exclude": ["node_modules", "dist"]
 }

@@ -42,7 +42,6 @@
                 <el-card shadow="hover" class="avatar-card">
                   <div class="avatar">
                     <img :src="userStore.userInfo.avatar" alt="Avatar" v-if="userStore.userInfo.avatar" />
-                    <!-- 删除: <img :src="userStore.userInfo.avatar" alt="Avatar" /> -->
                   </div>
                 </el-card>
               </el-col>
@@ -51,12 +50,7 @@
               </el-col>
             </el-row>
           </div>
-          <div v-else-if="activeMenu === '2-1'">
-            <UserManagement />
-          </div>
-          <div v-else-if="activeMenu === '2-2'">
-            <!-- 文章管理内容 -->
-          </div>
+          <component :is="currentComponent" v-else />
         </el-card>
       </el-main>
     </el-container>
@@ -67,6 +61,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import UserManagement from './UserManagement.vue';
+import Article from './Article.vue';
+import ArticleManagement from './ArticleManagement.vue'; // 添加: 引入 ArticleManagement 组件
 import { useUserStore } from '../stores/user';
 
 const { width } = useWindowSize();
@@ -80,8 +76,19 @@ const navbarColor = computed(() => theme.value === 'blue' ? '#409EFF' : '#fffbe6
 const textColor = computed(() => theme.value === 'blue' ? '#fff' : '#000');
 const activeTextColor = computed(() => theme.value === 'blue' ? '#ffd04b' : '#000');
 
+const currentComponent = ref(null); // 新增: 动态组件引用
+
 const handleSelect = (key) => {
   activeMenu.value = key;
+  if (key === '2-1') {
+    currentComponent.value = UserManagement;
+  } else if (key === '2-2') {
+    currentComponent.value = Article; // 默认显示 Article 组件
+  } else if (key === 'article-management') {
+    currentComponent.value = ArticleManagement; // 动态切换到 ArticleManagement
+  } else {
+    currentComponent.value = null; // 清空组件
+  }
 };
 
 const setTheme = (newTheme) => {
@@ -101,7 +108,6 @@ onMounted(() => {
 }
 
 .navbar {
-  /* 删除: background-color: #fff; */
   display: flex;
   justify-content: space-between;
   align-items: center;

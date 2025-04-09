@@ -31,7 +31,7 @@
 
       <!-- 右侧统计图 -->
       <el-col :span="16">
-        <div ref="chart" style="width: 600px; height: 400px;"></div>
+        <div id="chart" style="width: 600px; height: 400px;"></div>
       </el-col>
     </el-row>
   </div>
@@ -40,100 +40,106 @@
 <script>
 import * as echarts from 'echarts';
 import { getAuthorListApi } from '@/api/article';
-import { ref, onMounted, inject } from 'vue'; // 导入 inject 和其他必要的 API
+import { ref, onMounted, inject, computed } from 'vue'; // 导入 inject 和其他必要的 API
+import { useAuthorsStore } from '../stores/authors'; // 引入 authors store
 
 export default {
   setup() {
     // 使用 inject 获取父组件提供的 handleSelect 方法
     const handleSelect = inject('handleSelect');
+    const authorsStore = useAuthorsStore(); // 使用 authors store
 
-    return {
-      handleSelect // 将 handleSelect 暴露给模板和 methods 使用
-    };
-  },
-  data() {
-    return {
-      authors: [], // 作者数据（需从API获取）
-      currentPage: 1,
-      pageSize: 10,
-      totalAuthors: 0,
-      chart: null
-    };
-  },
-  computed: {
-    currentPageAuthors() {
-      const start = (this.currentPage - 1) * this.pageSize;
-      return this.authors.slice(start, start + this.pageSize);
-    }
-  },
-  mounted() {
-    // 初始化图表
-    this.chart = echarts.init(this.$refs.chart);
-    this.chart.setOption({
-      title: { text: '文章发表统计', left: 'center' }, // 添加标题
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } }, // 工具提示
-      grid: { left: '10%', right: '10%', bottom: '10%', containLabel: true }, // 网格布局
-      xAxis: { 
-        type: 'category', 
-        name: '作者姓名', // 横轴标签
-        axisLabel: { rotate: 45 } // 防止标签重叠
-      },
-      yAxis: { 
-        type: 'value', 
-        name: '文章数量' // 纵轴标签
-      },
-      series: [{ 
-        type: 'bar', 
-        label: { show: true, position: 'top' } // 显示柱形顶部数值
-      }]
+    const authors = ref([]); // 作者数据（需从API获取）
+    const currentPage = ref(1);
+    const pageSize = ref(10);
+    const totalAuthors = ref(0);
+    const chart = ref(null);
+
+    const currentPageAuthors = computed(() => {
+      const start = (currentPage.value - 1) * pageSize.value;
+      return authors.value.slice(start, start + pageSize.value);
     });
-    this.updateChart();
-  },
-  methods: {
-    // 分页变化时更新图表
-    handlePageChange(page) {
-      this.currentPage = page;
-      this.updateChart();
-    },
-    // 动态更新图表数据
-    updateChart() {
-      if (!this.currentPageAuthors || this.currentPageAuthors.length === 0) {
-        console.warn('当前页作者数据为空，无法更新图表');
-        return;
-      }
-      const data = this.currentPageAuthors.map(a => a.articleCnt); // 纵轴数据
-      const xAxis = this.currentPageAuthors.map(a => a.name); // 横轴数据
-      this.chart.setOption({
-        xAxis: { data: xAxis },
-        series: [{ data }]
-      });
-    },
-    // 获取作者列表（调用后端接口）
-    async fetchAuthors() {
+
+    const fetchAuthors = async () => {
       try {
-        const response = await getAuthorListApi('', this.currentPage, this.pageSize);
+        const response = await getAuthorListApi('', currentPage.value, pageSize.value);
         // 确保 authors 是一个数组
-        this.authors = response.data.data.rows;
-        this.totalAuthors = response.data.data.total;
+        authors.value = response.data.data.rows;
+        totalAuthors.value = response.data.data.total;
         // 数据加载完成后更新图表
-        this.updateChart();
+        updateChart();
+        // 将 authors 存入 Pinia store
+        authorsStore.setAuthors(authors.value);
       } catch (error) {
         console.error('获取作者列表失败:', error);
         // 如果接口异常，确保 authors 不会是 undefined
-        this.authors = [];
-        this.totalAuthors = 0;
+        authors.value = [];
+        totalAuthors.value = 0;
       }
-    },
-    // 跳转作者文章管理页
-    goToArticleManagement(authorId) {
+    };
+
+    const updateChart = () => {
+      if (!currentPageAuthors.value || currentPageAuthors.value.length === 0) {
+        console.warn('当前页作者数据为空，无法更新图表');
+        return;
+      }
+      const data = currentPageAuthors.value.map(a => a.articleCnt); // 纵轴数据
+      const xAxis = currentPageAuthors.value.map(a => a.name); // 横轴数据
+      chart.value.setOption({
+        xAxis: { data: xAxis },
+        series: [{ data }],
+      });
+    };
+
+    const handlePageChange = (page) => {
+      currentPage.value = page;
+      updateChart();
+    };
+
+    const goToArticleManagement = (authorId) => {
       // 使用 setup 中注入的 handleSelect 方法
-      if (this.handleSelect) {
-        this.handleSelect('article-management');
+      if (handleSelect) {
+        handleSelect('article-management');
       }
-    }
+    };
+
+    onMounted(() => {
+      // 初始化图表
+      chart.value = echarts.init(document.getElementById('chart'));
+      chart.value.setOption({
+        title: { text: '文章发表统计', left: 'center' }, // 添加标题
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } }, // 工具提示
+        grid: { left: '10%', right: '10%', bottom: '10%', containLabel: true }, // 网格布局
+        xAxis: { 
+          type: 'category', 
+          name: '作者姓名', // 横轴标签
+          axisLabel: { rotate: 45 } // 防止标签重叠
+        },
+        yAxis: { 
+          type: 'value', 
+          name: '文章数量' // 纵轴标签
+        },
+        series: [{ 
+          type: 'bar', 
+          label: { show: true, position: 'top' } // 显示柱形顶部数值
+        }]
+      });
+      fetchAuthors();
+    });
+
+    return {
+      handleSelect, // 将 handleSelect 暴露给模板和 methods 使用
+      authors,
+      currentPage,
+      pageSize,
+      totalAuthors,
+      currentPageAuthors,
+      handlePageChange,
+      updateChart,
+      fetchAuthors,
+      goToArticleManagement,
+      chart,
+    };
   },
-  created() {
-    this.fetchAuthors();
-  }
 };
 </script>

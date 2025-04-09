@@ -78,6 +78,16 @@
         <el-form-item label="内容">
           <el-input type="textarea" v-model="newArticle.content" placeholder="请输入内容"></el-input>
         </el-form-item>
+        <el-form-item label="作者">
+          <el-select v-model="newArticle.author" placeholder="请选择作者">
+            <el-option
+              v-for="author in authors"
+              :key="author.id"
+              :label="author.name"
+              :value="author.id"
+            />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="addArticleDialogVisible = false">取消</el-button>
@@ -88,10 +98,10 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, inject } from 'vue'; // 添加 inject 的导入
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
-import { useAuthorsStore } from '../stores/authors'; // 导入 authors store
+import { useAuthorsStore } from '../stores/authors'; // 使用 authors store
 import { getArticlesByAuthorIdApi, addArticleApi, deleteArticleApi, updateAuthorApi } from '@/api/article';
 
 export default {
@@ -99,6 +109,7 @@ export default {
     const userStore = useUserStore();
     const authorsStore = useAuthorsStore(); // 使用 authors store
     const router = useRouter();
+    const handleSelect = inject('handleSelect'); // 注入 handleSelect 方法
 
     const articles = ref([]);
     const currentPage = ref(1);
@@ -108,6 +119,8 @@ export default {
     const newArticle = ref({ title: '', content: '', author: null });
     const addArticleDialogVisible = ref(false);
 
+    const authors = computed(() => authorsStore.authors); // 从 Pinia store 获取 authors
+
     const currentPageArticles = computed(() => {
       const start = (currentPage.value - 1) * pageSize.value;
       return articles.value.slice(start, start + pageSize.value);
@@ -115,7 +128,7 @@ export default {
 
     const fetchArticles = async () => {
       try {
-        const authorId = newArticle.value.author;
+        const authorId = authors.value[0].id;
         const response = await getArticlesByAuthorIdApi(authorId, searchForm.value.title, currentPage.value, pageSize.value);
         articles.value = response.data.data.rows || [];
         totalArticles.value = response.data.data.total || 0;
@@ -125,7 +138,7 @@ export default {
     };
 
     const goBack = () => {
-      router.push('/article');
+      handleSelect('2-2'); // 使用 handleSelect 方法
     };
 
     const openAddArticleDialog = () => {
@@ -178,6 +191,13 @@ export default {
       fetchArticles();
     });
 
+    // 监听 authors 数据的变化，确保在 authors 数据更新后设置 newArticle 的 author 字段
+    watch(authors, (newAuthors) => {
+      if (newAuthors.length > 0 && !newArticle.value.author) {
+        newArticle.value.author = newAuthors[0].id; // 设置默认作者
+      }
+    });
+
     return {
       userStore,
       authorsStore,
@@ -196,6 +216,8 @@ export default {
       deleteArticle,
       handleSearch,
       handlePageChange,
+      authors, // 暴露 authors 给模板使用
+      handleSelect, // 暴露 handleSelect 给模板使用
     };
   }
 };

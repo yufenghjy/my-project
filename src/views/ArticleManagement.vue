@@ -91,32 +91,32 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
-import { getArticlesByAuthorIdApi, addArticleApi, deleteArticleApi } from '@/api/article';
+import { useAuthorsStore } from '../stores/authors'; // 导入 authors store
+import { getArticlesByAuthorIdApi, addArticleApi, deleteArticleApi, updateAuthorApi } from '@/api/article';
 
 export default {
   setup() {
     const userStore = useUserStore();
+    const authorsStore = useAuthorsStore(); // 使用 authors store
     const router = useRouter();
 
-    // 数据
     const articles = ref([]);
     const currentPage = ref(1);
     const pageSize = ref(10);
     const totalArticles = ref(0);
     const searchForm = ref({ title: '' });
-    const newArticle = ref({ title: '', content: '' });
+    const newArticle = ref({ title: '', content: '', author: null });
     const addArticleDialogVisible = ref(false);
 
-    // 计算属性
     const currentPageArticles = computed(() => {
       const start = (currentPage.value - 1) * pageSize.value;
       return articles.value.slice(start, start + pageSize.value);
     });
 
-    // 方法
     const fetchArticles = async () => {
       try {
-        const response = await getArticlesByAuthorIdApi(userStore.userInfo.id);
+        const authorId = newArticle.value.author;
+        const response = await getArticlesByAuthorIdApi(authorId, searchForm.value.title, currentPage.value, pageSize.value);
         articles.value = response.data.data.rows || [];
         totalArticles.value = response.data.data.total || 0;
       } catch (error) {
@@ -134,10 +134,11 @@ export default {
 
     const addArticle = async () => {
       try {
-        await addArticleApi(newArticle.value);
+        await addArticleApi({ ...newArticle.value, author: newArticle.value.author });
         addArticleDialogVisible.value = false;
-        newArticle.value = { title: '', content: '' };
+        newArticle.value = { title: '', content: '', author: newArticle.value.author };
         fetchArticles();
+        await updateAuthorApi({ id: newArticle.value.author });
       } catch (error) {
         console.error('添加文章失败:', error);
       }
@@ -145,13 +146,16 @@ export default {
 
     const editArticle = (id) => {
       console.log('编辑文章ID:', id);
-      // 这里可以跳转到编辑页面或打开编辑对话框
     };
 
     const deleteArticle = async (id) => {
       try {
         await deleteArticleApi(id);
         fetchArticles();
+        const article = articles.value.find(article => article.id === id);
+        if (article) {
+          await updateAuthorApi({ id: article.author });
+        }
       } catch (error) {
         console.error('删除文章失败:', error);
       }
@@ -159,7 +163,7 @@ export default {
 
     const handleSearch = () => {
       console.log('搜索条件:', searchForm.value);
-      // 根据搜索条件重新获取数据
+      fetchArticles();
     };
 
     const handlePageChange = (page) => {
@@ -167,13 +171,16 @@ export default {
       fetchArticles();
     };
 
-    // 生命周期钩子
     onMounted(() => {
+      // 假设从路由参数中获取作者 ID
+      const authorId = router.currentRoute.value.params.authorId;
+      newArticle.value.author = authorId;
       fetchArticles();
     });
 
     return {
       userStore,
+      authorsStore,
       articles,
       currentPage,
       pageSize,
@@ -188,7 +195,7 @@ export default {
       editArticle,
       deleteArticle,
       handleSearch,
-      handlePageChange
+      handlePageChange,
     };
   }
 };

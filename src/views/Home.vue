@@ -48,17 +48,18 @@
       <el-main class="main-content">
         <el-card shadow="always" style="height: 100%;">
           <div v-if="activeMenu === '1'" class="home-page">
-            <div v-if="dropdownCommand === 'profile'" class="profile-info">
+            <div v-if="dropdownCommand === 'profile' || dropdownCommand === 'calendar'" class="profile-info">
               <div class="avatar-panel">
                 <div class="avatar">
                   <img :src="userStore.userInfo.avatar" alt="Avatar" v-if="userStore.userInfo.avatar" />
                 </div>
               </div>
               <div class="info-panel">
-                <el-table :data="userInfoData" style="width: 100%">
-                  <el-table-column prop="key"  width="180"></el-table-column>
-                  <el-table-column prop="value" ></el-table-column>
+                <el-table :data="userInfoData" style="width: 100%" v-if="dropdownCommand === 'profile'">
+                  <el-table-column prop="key" width="180"></el-table-column>
+                  <el-table-column prop="value"></el-table-column>
                 </el-table>
+                <el-calendar v-model="calendarDate" v-if="dropdownCommand === 'calendar'" />
               </div>
             </div>
             <div v-else class="welcome-text">{{ welcomeMessage }}</div>
@@ -77,6 +78,7 @@ import UserManagement from './UserManagement.vue';
 import Article from './Article.vue';
 import ArticleManagement from './ArticleManagement.vue'; // 添加: 引入 ArticleManagement 组件
 import { useUserStore } from '../stores/user';
+import { ElCalendar } from 'element-plus'; // 新增: 引入 ElCalendar 组件
 
 const { width } = useWindowSize();
 const showMenu = computed(() => width.value >= 1000);
@@ -91,6 +93,7 @@ const textColor = computed(() => theme.value === 'blue' ? '#fff' : '#000');
 const activeTextColor = computed(() => theme.value === 'blue' ? '#ffd04b' : '#000');
 
 const currentComponent = ref(null); // 新增: 动态组件引用
+const calendarDate = ref(new Date()); // 新增: 日历日期绑定
 
 const handleSelect = (key) => {
   activeMenu.value = key;
@@ -209,5 +212,10 @@ provide('handleSelect', handleSelect);
 
 .calendar-content {
   flex-grow: 1;
+}
+
+.calendar-view {
+  width: 100%;
+  height: 100%;
 }
 </style>

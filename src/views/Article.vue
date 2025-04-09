@@ -100,6 +100,7 @@ export default {
       // 使用 setup 中注入的 handleSelect 方法
       if (handleSelect) {
         handleSelect('article-management');
+        authorsStore.setSelectedAuthorId(authorId); // 设置 selectedAuthorId
       }
     };
 

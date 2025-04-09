@@ -128,7 +128,7 @@ export default {
 
     const fetchArticles = async () => {
       try {
-        const authorId = authors.value[0].id;
+        const authorId = authorsStore.selectedAuthorId; // 使用 Pinia store 中存储的选择的作者 ID
         const response = await getArticlesByAuthorIdApi(authorId, searchForm.value.title, currentPage.value, pageSize.value);
         articles.value = response.data.data.rows || [];
         totalArticles.value = response.data.data.total || 0;

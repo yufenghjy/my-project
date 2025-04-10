@@ -40,7 +40,7 @@
 <script>
 import * as echarts from 'echarts';
 import { getAuthorListApi } from '@/api/article';
-import { ref, onMounted, inject, computed } from 'vue'; // 导入 inject 和其他必要的 API
+import { ref, onMounted, inject, nextTick } from 'vue'; // 导入 inject 和其他必要的 API
 import { useAuthorsStore } from '../stores/authors'; // 引入 authors store
 
 export default {
@@ -55,10 +55,7 @@ export default {
     const totalAuthors = ref(0);
     const chart = ref(null);
 
-    const currentPageAuthors = computed(() => {
-      const start = (currentPage.value - 1) * pageSize.value;
-      return authors.value.slice(start, start + pageSize.value);
-    });
+    const currentPageAuthors = ref([]); // 当前页的作者数据
 
     const fetchAuthors = async () => {
       try {
@@ -66,7 +63,10 @@ export default {
         // 确保 authors 是一个数组
         authors.value = response.data.data.rows;
         totalAuthors.value = response.data.data.total;
+        // 更新当前页的作者数据
+        currentPageAuthors.value = authors.value;
         // 数据加载完成后更新图表
+        await nextTick();
         updateChart();
         // 将 authors 存入 Pinia store
         authorsStore.setAuthors(authors.value);
@@ -75,6 +75,7 @@ export default {
         // 如果接口异常，确保 authors 不会是 undefined
         authors.value = [];
         totalAuthors.value = 0;
+        currentPageAuthors.value = [];
       }
     };
 
@@ -93,6 +94,7 @@ export default {
 
     const handlePageChange = (page) => {
       currentPage.value = page;
+      fetchAuthors();
       updateChart();
     };
 

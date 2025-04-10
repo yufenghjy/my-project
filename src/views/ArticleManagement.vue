@@ -43,8 +43,7 @@
             </div>
 
             <!-- 文章列表表格 -->
-
-            <el-table :data="currentPageArticles" style="width: 100%" border>
+            <el-table :data="articles" style="width: 100%" border>
               <el-table-column label="序号" width="80">
                 <template #default="scope">
                   {{ (currentPage - 1) * pageSize + scope.$index + 1 }}
@@ -60,12 +59,14 @@
               </el-table-column>
             </el-table>
 
-
-
             <!-- 分页组件 -->
-            <el-pagination @current-change="handlePageChange" :current-page="currentPage" :page-size="pageSize"
-              :total="totalArticles" layout="prev, pager, next" class="pagination" />
-
+            <div class="pagination-block" style="margin-top: 20px;">
+              <div class="demonstration"></div>
+              <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+                :page-sizes="[10, 20, 30]" :size="size" :disabled="disabled" :background="background"
+                layout="total, sizes, prev, pager, next, jumper" :total="totalArticles" @size-change="handleSizeChange"
+                @current-change="handlePageChange" />
+            </div>
           </el-card>
         </el-col>
       </el-row>
@@ -79,11 +80,6 @@
         </el-form-item>
         <el-form-item label="内容">
           <el-input type="textarea" v-model="newArticle.content" placeholder="请输入内容"></el-input>
-        </el-form-item>
-        <el-form-item label="作者">
-          <el-select v-model="newArticle.author" placeholder="请选择作者">
-            <el-option v-for="author in authors" :key="author.id" :label="author.name" :value="author.id" />
-          </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -113,7 +109,7 @@ export default {
     const pageSize = ref(10);
     const totalArticles = ref(0);
     const searchForm = ref({ title: '' });
-    const newArticle = ref({ title: '', content: '', author: null });
+    const newArticle = ref({ title: '', content: '', author: authorsStore.selectedAuthorId });
     const addArticleDialogVisible = ref(false);
 
     const authors = computed(() => authorsStore.authors); // 从 Pinia store 获取 authors
@@ -131,17 +127,13 @@ export default {
       return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
     });
 
-    const currentPageArticles = computed(() => {
-      const start = (currentPage.value - 1) * pageSize.value;
-      return articles.value.slice(start, start + pageSize.value);
-    });
 
     const fetchArticles = async () => {
       try {
-        const authorId = authorsStore.selectedAuthorId; // 使用 Pinia store 中存储的选择的作者 ID
-        const response = await getArticlesByAuthorIdApi(authorId, searchForm.value.title, currentPage.value, pageSize.value);
-        articles.value = response.data.data.rows || [];
-        totalArticles.value = response.data.data.total || 0;
+        let authorId = authorsStore.selectedAuthorId; // 使用 Pinia store 中存储的选择的作者 ID
+        let response = await getArticlesByAuthorIdApi(authorId, searchForm.value.title, currentPage.value, pageSize.value);
+        articles.value = response.data.data.rows;
+        totalArticles.value = response.data.data.total;
       } catch (error) {
         console.error('获取文章列表失败:', error);
       }
@@ -157,9 +149,9 @@ export default {
 
     const addArticle = async () => {
       try {
-        await addArticleApi({ ...newArticle.value, author: newArticle.value.author });
+        await addArticleApi({ title: newArticle.value.title, content: newArticle.value.content, author: authorsStore.selectedAuthorId });
         addArticleDialogVisible.value = false;
-        newArticle.value = { title: '', content: '', author: newArticle.value.author };
+        newArticle.value = { title: '', content: '', author: authorsStore.selectedAuthorId }; // 重置表单
         fetchArticles();
         await updateAuthorApi({ id: newArticle.value.author });
       } catch (error) {
@@ -189,9 +181,15 @@ export default {
       fetchArticles();
     };
 
-    const handlePageChange = (page) => {
-      currentPage.value = page;
-      fetchArticles();
+    const handlePageChange = (val) => {
+      currentPage.value = val;
+      fetchArticles(); // 确保在分页变化后执行一次查询
+    };
+
+    const handleSizeChange = (val) => {
+      console.log(`${val} items per page`);
+      pageSize.value = val; // 更新分页大小
+      fetchArticles(); // 调用查询方法以重新获取数据
     };
 
     onMounted(() => {
@@ -214,6 +212,10 @@ export default {
       fetchArticles();
     });
 
+    const size = ref('default');
+    const background = ref(false);
+    const disabled = ref(false);
+
     return {
       userStore,
       authorsStore,
@@ -224,7 +226,6 @@ export default {
       searchForm,
       newArticle,
       addArticleDialogVisible,
-      currentPageArticles,
       goBack,
       openAddArticleDialog,
       addArticle,
@@ -232,10 +233,14 @@ export default {
       deleteArticle,
       handleSearch,
       handlePageChange,
+      handleSizeChange,
       authors, // 暴露 authors 给模板使用
       handleSelect, // 暴露 handleSelect 给模板使用
       currentAuthor, // 暴露 currentAuthor 给模板使用
       formattedBirthday, // 暴露 formattedBirthday 给模板使用
+      size,
+      background,
+      disabled,
     };
   }
 };
@@ -293,6 +298,12 @@ export default {
 .content-section {
   overflow-y: auto;
   /* 添加垂直滚动条 */
+}
+
+.pagination-block {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .pagination {

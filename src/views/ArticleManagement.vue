@@ -4,18 +4,20 @@
     <el-row :gutter="20" class="header-section">
       <!-- 左侧头像 -->
       <el-col :span="8" class="avatar-section">
-        <el-card shadow="hover">
+        <el-card shadow="hover" class="full-height">
           <div class="avatar">
-            <img :src="userStore.userInfo.avatar" alt="Avatar" v-if="userStore.userInfo.avatar" />
+            <img :src="currentAuthor.avatar" alt="Avatar" style="width: 50%;" v-if="currentAuthor.avatar" />
           </div>
         </el-card>
       </el-col>
       <!-- 右侧用户信息 -->
       <el-col :span="16" class="info-section">
-        <el-card shadow="hover">
+        <el-card shadow="hover" class="full-height">
           <div class="user-info">
-            <p><strong>用户名:</strong> {{ userStore.userInfo.name }}</p>
-            <p><strong>邮箱:</strong> {{ userStore.userInfo.email }}</p>
+            <p><strong>作者:</strong> {{ currentAuthor.name }}</p>
+            <p><strong>邮箱:</strong> {{ currentAuthor.email }}</p>
+            <p><strong>生日:</strong> {{ currentAuthor.birthday }}</p>
+            <p><strong>余额:</strong> {{ currentAuthor.money }}</p>
           </div>
           <el-button type="primary" @click="goBack">返回</el-button>
         </el-card>
@@ -121,6 +123,12 @@ export default {
 
     const authors = computed(() => authorsStore.authors); // 从 Pinia store 获取 authors
 
+    // 添加计算属性 currentAuthor
+    const currentAuthor = computed(() => {
+      const selectedAuthorId = authorsStore.selectedAuthorId;
+      return authors.value.find(author => author.id === selectedAuthorId) || {};
+    });
+
     const currentPageArticles = computed(() => {
       const start = (currentPage.value - 1) * pageSize.value;
       return articles.value.slice(start, start + pageSize.value);
@@ -198,6 +206,12 @@ export default {
       }
     });
 
+    // 监听 selectedAuthorId 的变化
+    watch(() => authorsStore.selectedAuthorId, (newAuthorId) => {
+      newArticle.value.author = newAuthorId;
+      fetchArticles();
+    });
+
     return {
       userStore,
       authorsStore,
@@ -218,6 +232,7 @@ export default {
       handlePageChange,
       authors, // 暴露 authors 给模板使用
       handleSelect, // 暴露 handleSelect 给模板使用
+      currentAuthor, // 暴露 currentAuthor 给模板使用
     };
   }
 };
@@ -230,11 +245,28 @@ export default {
 
 .header-section {
   margin-bottom: 20px;
+  display: flex; /* 添加 Flexbox 布局 */
+  align-items: stretch; /* 使子元素高度拉伸以匹配容器高度 */
+  height: 40%;
+}
+
+.avatar {
+  display: flex; /* 添加 Flexbox 布局 */
+  justify-content: center; /* 水平居中 */
+  align-items: center; /* 垂直居中 */
+  height: 100%; /* 确保容器高度占满 */
 }
 
 .avatar img {
-  width: 100%;
+  max-width: 100%; /* 修改为 max-width */
+  max-height: 100%; /* 修改为 max-height */
+  width: auto; /* 添加 width: auto */
+  height: auto; /* 添加 height: auto */
   border-radius: 50%;
+}
+
+.full-height {
+  height: 100%; /* 设置卡片高度为 100% */
 }
 
 .toolbar {

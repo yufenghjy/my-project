@@ -73,18 +73,22 @@
     </el-scrollbar>
 
     <!-- 添加文章对话框 -->
-    <el-dialog v-model="addArticleDialogVisible" title="添加文章" width="40%">
-      <el-form :model="newArticle" label-width="80px">
+    <el-dialog 
+      v-model="addArticleDialogVisible" 
+      :title="editMode ? '编辑文章' : '添加文章'" 
+      width="40%"
+    >
+      <el-form :model="currentArticle" label-width="80px">
         <el-form-item label="标题">
-          <el-input v-model="newArticle.title" placeholder="请输入标题"></el-input>
+          <el-input v-model="currentArticle.title" placeholder="请输入标题"></el-input>
         </el-form-item>
         <el-form-item label="内容">
-          <el-input type="textarea" v-model="newArticle.content" placeholder="请输入内容"></el-input>
+          <el-input type="textarea" v-model="currentArticle.content" placeholder="请输入内容"></el-input>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="addArticleDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="addArticle">确定</el-button>
+        <el-button @click="resetForm">取消</el-button>
+        <el-button type="primary" @click="saveArticle">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -127,6 +131,9 @@ export default {
       return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
     });
 
+    const editMode = ref(false);
+    const selectedArticle = ref({});
+    const currentArticle = ref({ title: '', content: '', author: authorsStore.selectedAuthorId });
 
     const fetchArticles = async () => {
       try {
@@ -144,23 +151,60 @@ export default {
     };
 
     const openAddArticleDialog = () => {
+      editMode.value = false;
+      currentArticle.value = { 
+        title: '', 
+        content: '', 
+        author: authorsStore.selectedAuthorId 
+      };
       addArticleDialogVisible.value = true;
     };
 
-    const addArticle = async () => {
-      try {
-        await addArticleApi({ title: newArticle.value.title, content: newArticle.value.content, author: authorsStore.selectedAuthorId });
-        addArticleDialogVisible.value = false;
-        newArticle.value = { title: '', content: '', author: authorsStore.selectedAuthorId }; // 重置表单
-        fetchArticles();
-        await updateAuthorApi({ id: newArticle.value.author });
-      } catch (error) {
-        console.error('添加文章失败:', error);
+    const editArticle = async (id) => {
+      const article = articles.value.find(article => article.id === id);
+      if (article) {
+        editMode.value = true;
+        currentArticle.value = { ...article };
+        addArticleDialogVisible.value = true;
       }
     };
 
-    const editArticle = (id) => {
-      console.log('编辑文章ID:', id);
+    const saveArticle = async () => {
+      try {
+        if (editMode.value) {
+          await updateArticleApi(currentArticle.value.id, currentArticle.value);
+        } else {
+          await addArticleApi({
+            title: currentArticle.value.title,
+            content: currentArticle.value.content,
+            author: authorsStore.selectedAuthorId
+          });
+        }
+        addArticleDialogVisible.value = false;
+        resetForm();
+        await fetchArticles();
+        await updateAuthorApi({ id: currentArticle.value.author });
+      } catch (error) {
+        console.error('保存文章失败:', error);
+      }
+    };
+
+    const resetForm = () => {
+      editMode.value = false;
+      addArticleDialogVisible.value = false;
+      currentArticle.value = { 
+        title: '', 
+        content: '', 
+        author: authorsStore.selectedAuthorId 
+      };
+    };
+
+    // 新增updateArticleApi调用（假设存在该API）
+    // 如果实际API不同需要调整
+    const updateArticleApi = async (id, data) => {
+      // 实际应调用后端更新接口
+      // 示例代码：
+      // return await updateArticleByIdApi(id, data);
     };
 
     const deleteArticle = async (id) => {
@@ -228,7 +272,6 @@ export default {
       addArticleDialogVisible,
       goBack,
       openAddArticleDialog,
-      addArticle,
       editArticle,
       deleteArticle,
       handleSearch,
@@ -238,6 +281,11 @@ export default {
       handleSelect, // 暴露 handleSelect 给模板使用
       currentAuthor, // 暴露 currentAuthor 给模板使用
       formattedBirthday, // 暴露 formattedBirthday 给模板使用
+      editMode,
+      selectedArticle,
+      currentArticle,
+      saveArticle,
+      resetForm,
       size,
       background,
       disabled,

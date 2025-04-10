@@ -106,8 +106,6 @@ const handleSelect = (key) => {
     currentComponent.value = Article; // 默认显示 Article 组件
   } else if (key === 'article-management') {
     currentComponent.value = ArticleManagement; // 动态切换到 ArticleManagement
-  } else {
-    currentComponent.value = null; // 清空组件
   }
 };
 
@@ -120,6 +118,7 @@ const handleDropdownCommand = (command) => {
 };
 
 const setTheme = (newTheme) => {
+  activeMenu.value = '1';
   theme.value = newTheme;
 };
 

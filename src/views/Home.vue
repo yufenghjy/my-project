@@ -73,12 +73,15 @@
 
 <script setup>
 import { ref, computed, onMounted, provide } from 'vue';
+import { useRouter } from 'vue-router'; // 新增: 引入 useRouter
 import { useWindowSize } from '@vueuse/core';
 import UserManagement from './UserManagement.vue';
 import Article from './Article.vue';
 import ArticleManagement from './ArticleManagement.vue'; // 添加: 引入 ArticleManagement 组件
 import { useUserStore } from '../stores/user';
 import { ElCalendar } from 'element-plus'; // 新增: 引入 ElCalendar 组件
+
+const router = useRouter(); // 新增: 初始化 router
 
 const { width } = useWindowSize();
 const showMenu = computed(() => width.value >= 1000);
@@ -112,7 +115,7 @@ const handleDropdownCommand = (command) => {
   dropdownCommand.value = command;
   if (command === 'logout') {
     // 处理退出登录逻辑
-    console.log('退出登录');
+    router.push('/login'); // 新增: 路由跳转到登录页面
   }
 };
 

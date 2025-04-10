@@ -16,7 +16,7 @@
           <div class="user-info">
             <p><strong>作者:</strong> {{ currentAuthor.name }}</p>
             <p><strong>邮箱:</strong> {{ currentAuthor.email }}</p>
-            <p><strong>生日:</strong> {{ currentAuthor.birthday }}</p>
+            <p><strong>生日:</strong> {{ formattedBirthday }}</p>
             <p><strong>余额:</strong> {{ currentAuthor.money }}</p>
           </div>
           <el-button type="primary" @click="goBack">返回</el-button>
@@ -25,51 +25,51 @@
     </el-row>
 
     <!-- 下方区域 -->
-    <el-row class="content-section">
-      <el-col :span="24">
-        <el-card shadow="always">
-          <!-- 表格上方工具栏 -->
-          <div class="toolbar">
-            <el-button type="primary" @click="openAddArticleDialog">添加</el-button>
-            <el-form :inline="true" :model="searchForm" class="search-form">
-              <el-form-item label="标题">
-                <el-input v-model="searchForm.title" placeholder="请输入标题"></el-input>
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" @click="handleSearch">搜索</el-button>
-              </el-form-item>
-            </el-form>
-          </div>
+    <el-scrollbar height="400px">
+      <el-row class="content-section">
+        <el-col :span="24">
+          <el-card shadow="always">
+            <!-- 表格上方工具栏 -->
+            <div class="toolbar">
+              <el-button type="primary" @click="openAddArticleDialog">添加</el-button>
+              <el-form :inline="true" :model="searchForm" class="search-form">
+                <el-form-item label="标题">
+                  <el-input v-model="searchForm.title" placeholder="请输入标题"></el-input>
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="handleSearch">搜索</el-button>
+                </el-form-item>
+              </el-form>
+            </div>
 
-          <!-- 文章列表表格 -->
-          <el-table :data="currentPageArticles" style="width: 100%" border>
-            <el-table-column label="序号" width="80">
-              <template #default="scope">
-                {{ (currentPage - 1) * pageSize + scope.$index + 1 }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="title" label="标题" />
-            <el-table-column prop="content" label="内容" />
-            <el-table-column label="操作" width="150">
-              <template #default="scope">
-                <el-button type="text" @click="editArticle(scope.row.id)">编辑</el-button>
-                <el-button type="text" @click="deleteArticle(scope.row.id)">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+            <!-- 文章列表表格 -->
 
-          <!-- 分页组件 -->
-          <el-pagination
-            @current-change="handlePageChange"
-            :current-page="currentPage"
-            :page-size="pageSize"
-            :total="totalArticles"
-            layout="prev, pager, next"
-            class="pagination"
-          />
-        </el-card>
-      </el-col>
-    </el-row>
+            <el-table :data="currentPageArticles" style="width: 100%" border>
+              <el-table-column label="序号" width="80">
+                <template #default="scope">
+                  {{ (currentPage - 1) * pageSize + scope.$index + 1 }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="title" label="标题" />
+              <el-table-column prop="content" label="内容" />
+              <el-table-column label="操作" width="150">
+                <template #default="scope">
+                  <el-button type="text" @click="editArticle(scope.row.id)">编辑</el-button>
+                  <el-button type="text" @click="deleteArticle(scope.row.id)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+
+
+
+            <!-- 分页组件 -->
+            <el-pagination @current-change="handlePageChange" :current-page="currentPage" :page-size="pageSize"
+              :total="totalArticles" layout="prev, pager, next" class="pagination" />
+
+          </el-card>
+        </el-col>
+      </el-row>
+    </el-scrollbar>
 
     <!-- 添加文章对话框 -->
     <el-dialog v-model="addArticleDialogVisible" title="添加文章" width="40%">
@@ -82,12 +82,7 @@
         </el-form-item>
         <el-form-item label="作者">
           <el-select v-model="newArticle.author" placeholder="请选择作者">
-            <el-option
-              v-for="author in authors"
-              :key="author.id"
-              :label="author.name"
-              :value="author.id"
-            />
+            <el-option v-for="author in authors" :key="author.id" :label="author.name" :value="author.id" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -127,6 +122,13 @@ export default {
     const currentAuthor = computed(() => {
       const selectedAuthorId = authorsStore.selectedAuthorId;
       return authors.value.find(author => author.id === selectedAuthorId) || {};
+    });
+
+    // 添加计算属性 formattedBirthday
+    const formattedBirthday = computed(() => {
+      if (!currentAuthor.value.birthday) return '';
+      const date = new Date(currentAuthor.value.birthday);
+      return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
     });
 
     const currentPageArticles = computed(() => {
@@ -233,6 +235,7 @@ export default {
       authors, // 暴露 authors 给模板使用
       handleSelect, // 暴露 handleSelect 给模板使用
       currentAuthor, // 暴露 currentAuthor 给模板使用
+      formattedBirthday, // 暴露 formattedBirthday 给模板使用
     };
   }
 };
@@ -245,28 +248,39 @@ export default {
 
 .header-section {
   margin-bottom: 20px;
-  display: flex; /* 添加 Flexbox 布局 */
-  align-items: stretch; /* 使子元素高度拉伸以匹配容器高度 */
+  display: flex;
+  /* 添加 Flexbox 布局 */
+  align-items: stretch;
+  /* 使子元素高度拉伸以匹配容器高度 */
   height: 40%;
 }
 
 .avatar {
-  display: flex; /* 添加 Flexbox 布局 */
-  justify-content: center; /* 水平居中 */
-  align-items: center; /* 垂直居中 */
-  height: 100%; /* 确保容器高度占满 */
+  display: flex;
+  /* 添加 Flexbox 布局 */
+  justify-content: center;
+  /* 水平居中 */
+  align-items: center;
+  /* 垂直居中 */
+  height: 100%;
+  /* 确保容器高度占满 */
 }
 
 .avatar img {
-  max-width: 100%; /* 修改为 max-width */
-  max-height: 100%; /* 修改为 max-height */
-  width: auto; /* 添加 width: auto */
-  height: auto; /* 添加 height: auto */
+  max-width: 100%;
+  /* 修改为 max-width */
+  max-height: 100%;
+  /* 修改为 max-height */
+  width: auto;
+  /* 添加 width: auto */
+  height: auto;
+  /* 添加 height: auto */
   border-radius: 50%;
 }
 
 .full-height {
-  height: 100%; /* 设置卡片高度为 100% */
+  height: 100%;
+  /* 设置卡片高度为 100% */
 }
 
 .toolbar {
@@ -274,6 +288,11 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+}
+
+.content-section {
+  overflow-y: auto;
+  /* 添加垂直滚动条 */
 }
 
 .pagination {

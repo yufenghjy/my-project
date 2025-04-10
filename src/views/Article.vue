@@ -1,11 +1,11 @@
 <template>
-  <div class="container">
-    <el-row :gutter="20">
+  <div class="container" style="height: 90vh; display: flex; flex-direction: column;">
+    <el-row :gutter="20" style="height: 100%;">
       <!-- 左侧作者列表 -->
       <el-col :span="8">
         <el-card>
           <div slot="header">作者列表</div>
-          <el-table :data="currentPageAuthors" style="width: 100%">
+          <el-table :data="currentPageAuthors" style="width: 100%;">
             <el-table-column label="序号" width="80">
               <template #default="scope">
                 {{ (currentPage - 1) * pageSize + scope.$index + 1 }}
@@ -25,13 +25,14 @@
             :current-page="currentPage"
             :page-size="pageSize"
             :total="totalAuthors"
+            style="text-align: center;"
           />
         </el-card>
       </el-col>
 
       <!-- 右侧统计图 -->
-      <el-col :span="16">
-        <div id="chart" style="width: 600px; height: 400px;"></div>
+      <el-col :span="16" style="height: 100%; position: relative;">
+        <div id="chart" style="width: 100%; height: 100%;"></div>
       </el-col>
     </el-row>
   </div>

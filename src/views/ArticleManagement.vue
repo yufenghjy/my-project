@@ -99,7 +99,7 @@ import { ref, computed, onMounted, watch, inject } from 'vue'; // 添加 inject 
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
 import { useAuthorsStore } from '../stores/authors'; // 使用 authors store
-import { getArticlesByAuthorIdApi, addArticleApi, deleteArticleApi, updateAuthorApi } from '@/api/article';
+import { getArticlesByAuthorIdApi, addArticleApi, deleteArticleApi, updateAuthorApi, updateArticleApi } from '@/api/article';
 
 export default {
   setup() {
@@ -133,7 +133,7 @@ export default {
 
     const editMode = ref(false);
     const selectedArticle = ref({});
-    const currentArticle = ref({ title: '', content: '', author: authorsStore.selectedAuthorId });
+    const currentArticle = ref({ id: '',title: '', content: '', author: authorsStore.selectedAuthorId });
 
     const fetchArticles = async () => {
       try {
@@ -153,6 +153,7 @@ export default {
     const openAddArticleDialog = () => {
       editMode.value = false;
       currentArticle.value = { 
+        id: '',
         title: '', 
         content: '', 
         author: authorsStore.selectedAuthorId 
@@ -172,7 +173,7 @@ export default {
     const saveArticle = async () => {
       try {
         if (editMode.value) {
-          await updateArticleApi(currentArticle.value.id, currentArticle.value);
+          await updateArticleApi(currentArticle.value);
         } else {
           await addArticleApi({
             title: currentArticle.value.title,
@@ -193,20 +194,14 @@ export default {
       editMode.value = false;
       addArticleDialogVisible.value = false;
       currentArticle.value = { 
+        id: '',
         title: '', 
         content: '', 
         author: authorsStore.selectedAuthorId 
       };
     };
 
-    // 新增updateArticleApi调用（假设存在该API）
-    // 如果实际API不同需要调整
-    const updateArticleApi = async (id, data) => {
-      // 实际应调用后端更新接口
-      // 示例代码：
-      // return await updateArticleByIdApi(id, data);
-    };
-
+  
     const deleteArticle = async (id) => {
       try {
         await deleteArticleApi(id);

@@ -7,7 +7,7 @@ export const getAuthorByIdApi = (id) => request.get(`/authors/${id}`);
 export const addArticleApi = (data) => request.post('/articles', data);
 
 export const getArticlesByAuthorIdApi = (authorId, title = '', page = 1, pageSize = 10) => request.get(`/articles/${authorId}?title=${title}&page=${page}&pageSize=${pageSize}`);
-export const updateArticleApi = (id, data) => request.put(`/articles/${id}`, data);
+export const updateArticleApi = (data) => request.put(`/articles`, data);
 
 export const deleteArticleApi = (id) => request.delete(`/articles/${id}`);
 

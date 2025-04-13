@@ -22,7 +22,7 @@
       <el-table-column prop="name" label="姓名" width="180" />
       <el-table-column label="地址">
         <template #default="scope">
-          {{ scope.row.address }}
+          {{ scope.row.province }} {{ scope.row.city }} {{ scope.row.address }}
         </template>
       </el-table-column>
       <el-table-column label="操作">
@@ -34,10 +34,9 @@
     </el-table>
     <div class="pagination-block" style="margin-top: 20px;">
       <div class="demonstration"></div>
-      <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
-        :page-sizes="[10, 20, 30]" :size="size" :disabled="disabled" :background="background"
-        layout="total, sizes, prev, pager, next, jumper" :total="total" @size-change="handleSizeChange"
-        @current-change="handleCurrentChange" />
+      <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 30]"
+        :size="size" :disabled="disabled" :background="background" layout="total, sizes, prev, pager, next, jumper"
+        :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
     </div>
     <el-dialog title="用户信息" v-model="dialogVisible" width="30%">
       <el-form :model="form" label-width="80px">
@@ -45,10 +44,15 @@
           <el-input v-model="form.name" />
         </el-form-item>
         <el-form-item label="省份">
-          <el-input v-model="form.province" />
+          <el-select v-model="form.province" placeholder="请选择省份">
+            <el-option v-for="province in provinces" :key="province.value" :label="province.label"
+              :value="province.value" />
+          </el-select>
         </el-form-item>
         <el-form-item label="城市">
-          <el-input v-model="form.city" />
+          <el-select v-model="form.city" placeholder="请选择城市" :key="form.province">
+            <el-option v-for="city in cities" :key="city.value" :label="city.label" :value="city.value" />
+          </el-select>
         </el-form-item>
         <el-form-item label="地址">
           <el-input v-model="form.address" />
@@ -68,9 +72,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { queryPageApi, addUserApi, updateUserApi, deleteUserApi } from '../api/user';
 import type { ComponentSize } from 'element-plus'
+import pca from 'area-data/pca'; // 引入省市区数据
 
 const users = ref([]);
 const total = ref(0); // 添加 total 变量
@@ -92,13 +97,18 @@ const form = ref({
   zip: ''
 });
 
+const provinces = pca['86'] ? Object.entries(pca['86']).map(([code, name]) => ({ value: code, label: name })) : [];
+const cities = ref([]);
+
 const handleAdd = () => {
   form.value = { id: null, name: '', province: '', city: '', address: '', zip: '' };
   dialogVisible.value = true;
 };
 
 const handleEdit = (index, row) => {
-  form.value = { ...row };
+  // 将省份名称转换为对应的省份代码
+  const provinceCode = Object.keys(pca['86']).find(key => pca['86'][key] === row.province);
+  form.value = { ...row, province: provinceCode || '' };
   dialogVisible.value = true;
 };
 
@@ -109,12 +119,19 @@ const handleDelete = async (row) => {
 };
 
 const handleSave = async () => {
-  if (form.value.id) {
+  const userToSave = { ...form.value };
+  // 将城市代码转换为中文名称
+  userToSave.city = pca[userToSave.province][userToSave.city] || '';
+  // 将省份代码转换为中文名称
+  userToSave.province = pca['86'][userToSave.province] || '';
+
+
+  if (userToSave.id) {
     // 编辑用户
-    await updateUserApi(form.value);
+    await updateUserApi(userToSave);
   } else {
     // 添加用户
-    await addUserApi(form.value);
+    await addUserApi(userToSave);
   }
   dialogVisible.value = false;
   handleSearch(); // 刷新用户列表
@@ -143,4 +160,20 @@ const handleCurrentChange = (val: number) => {
 onMounted(() => {
   handleSearch();
 });
+
+// 监听省份变化，更新城市选项
+watch(
+  () => form.value.province,
+  (newProvince) => {
+    if (newProvince) {
+      cities.value = Object.entries(pca[newProvince] || {}).map(([code, name]) => ({
+        value: code,
+        label: name
+      }));
+    } else {
+      cities.value = [];
+      form.value.city = '';
+    }
+  }
+);
 </script>

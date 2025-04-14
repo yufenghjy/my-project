@@ -2,13 +2,14 @@
   <div style="text-align: center;">
     <h1>用户管理</h1>
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <el-button type="primary" @click="handleAdd">添加</el-button>
+      <el-button type="primary" @click="handleAdd">
+        <el-icon><Plus /></el-icon>添加</el-button>
       <el-form :inline="true" style="display: inline-block;">
         <el-form-item label="姓名">
           <el-input v-model="searchUser.name" placeholder="请输入姓名" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
+          <el-button type="primary" @click="handleSearch">查询<el-icon><Search /></el-icon></el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -38,7 +39,7 @@
         :size="size" :disabled="disabled" :background="background" layout="total, sizes, prev, pager, next, jumper"
         :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
     </div>
-    <el-dialog title="用户信息" v-model="dialogVisible" width="30%">
+    <el-dialog :title="isEditing ? '编辑用户' : '添加用户'" v-model="dialogVisible" width="30%">
       <el-form :model="form" label-width="80px">
         <el-form-item label="姓名">
           <el-input v-model="form.name" />
@@ -83,6 +84,7 @@ const total = ref(0); // 添加 total 变量
 const pageSize = ref(10); // 初始化分页大小
 const currentPage = ref(1); // 初始化当前页码
 const dialogVisible = ref(false);
+const isEditing = ref(false); // 新增状态变量来区分添加或编辑
 const searchUser = ref({ name: '' }); // 查询表单数据
 const size = ref<ComponentSize>('default')
 const background = ref(false)
@@ -103,6 +105,7 @@ const cities = ref([]);
 const handleAdd = () => {
   form.value = { id: null, name: '', province: '', city: '', address: '', zip: '' };
   dialogVisible.value = true;
+  isEditing.value = false; // 设置为添加状态
 };
 
 const handleEdit = (index, row) => {
@@ -110,6 +113,7 @@ const handleEdit = (index, row) => {
   const provinceCode = Object.keys(pca['86']).find(key => pca['86'][key] === row.province);
   form.value = { ...row, province: provinceCode || '' };
   dialogVisible.value = true;
+  isEditing.value = true; // 设置为编辑状态
 };
 
 const handleDelete = async (row) => {

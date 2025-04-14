@@ -31,13 +31,14 @@
           <el-card shadow="always">
             <!-- 表格上方工具栏 -->
             <div class="toolbar">
-              <el-button type="primary" @click="openAddArticleDialog">添加</el-button>
+              <el-button type="primary" @click="openAddArticleDialog">
+                <el-icon><Plus /></el-icon>添加</el-button>
               <el-form :inline="true" :model="searchForm" class="search-form">
                 <el-form-item label="标题">
                   <el-input v-model="searchForm.title" placeholder="请输入标题"></el-input>
                 </el-form-item>
                 <el-form-item>
-                  <el-button type="primary" @click="handleSearch">搜索</el-button>
+                  <el-button type="primary" @click="handleSearch">搜索<el-icon><Search /></el-icon></el-button>
                 </el-form-item>
               </el-form>
             </div>

@@ -85,7 +85,14 @@ const rules = {
     { required: true, message: '旧密码不能为空' }
   ],
   newPassword: [
-    { required: true, message: '新密码不能为空' }
+    { required: true, message: '新密码不能为空' },
+    { validator: (rule, value, callback) => {
+      if (value === form.value.oldPassword) {
+        callback(new Error('新密码不能与旧密码相同'));
+      } else {
+        callback();
+      }
+    }}
   ],
   confirmPassword: [
     { required: true, message: '请确认新密码' },

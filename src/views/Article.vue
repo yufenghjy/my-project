@@ -31,7 +31,7 @@
       </el-col>
 
       <!-- 右侧统计图 -->
-      <el-col :span="16" style="height: 100%; position: relative;">
+      <el-col :span="14" style="height: 100%; position: relative;">
         <div id="chart" style="width: 100%; height: 100%;"></div>
       </el-col>
     </el-row>
@@ -132,7 +132,7 @@ export default {
     });
 
     return {
-      handleSelect, // 将 handleSelect 暴露给模板和 methods 使用
+      handleSelect,
       authors,
       currentPage,
       pageSize,

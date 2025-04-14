@@ -4,26 +4,43 @@
       <el-menu :default-active="activeMenu" @select="handleSelect" :background-color="sidebarColor"
         :text-color="textColor" :active-text-color="activeTextColor">
         <el-menu-item index="1">
-          <i class="el-icon-s-home"></i>
+          <el-icon>
+            <HomeFilled />
+          </el-icon>
           <span slot="title">首页</span>
         </el-menu-item>
         <el-sub-menu index="2">
           <template #title>
-            <i class="el-icon-menu"></i>
+            <el-icon>
+              <Operation />
+            </el-icon>
             功能菜单
           </template>
           <el-menu-item-group>
-            <el-menu-item index="2-1">用户管理</el-menu-item>
-            <el-menu-item index="2-2">文章管理</el-menu-item>
+            <el-menu-item index="2-1">
+              <el-icon>
+                <UserFilled />
+              </el-icon>
+              用户管理
+            </el-menu-item>
+            <el-menu-item index="2-2">
+              <el-icon>
+                <Tickets />
+              </el-icon>
+              文章管理</el-menu-item>
           </el-menu-item-group>
         </el-sub-menu>
         <el-sub-menu index="3">
           <template #title>
-            <i class="el-icon-setting"></i>
+            <el-icon>
+              <Switch />
+            </el-icon>
             <span>主题切换</span>
           </template>
-          <el-menu-item index="3-1" @click="setTheme('blue')">蓝色风格</el-menu-item>
-          <el-menu-item index="3-2" @click="setTheme('yellow')">黄色风格</el-menu-item>
+          <el-menu-item index="3-1" @click="setTheme('blue')">
+            <el-icon><Help /></el-icon>蓝色风格</el-menu-item>
+          <el-menu-item index="3-2" @click="setTheme('yellow')">
+            <el-icon><Help /></el-icon>黄色风格</el-menu-item>
         </el-sub-menu>
       </el-menu>
     </el-aside>
@@ -41,6 +58,7 @@
               <el-dropdown-item command="profile">个人信息</el-dropdown-item>
               <el-dropdown-item command="calendar">日历</el-dropdown-item>
               <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+              <el-dropdown-item command="logoff">注销</el-dropdown-item> <!-- 新增: 注销功能 -->
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -80,6 +98,8 @@ import Article from './Article.vue';
 import ArticleManagement from './ArticleManagement.vue'; // 添加: 引入 ArticleManagement 组件
 import { useUserStore } from '../stores/user';
 import { ElCalendar } from 'element-plus'; // 新增: 引入 ElCalendar 组件
+import { logoffApi } from '@/api/logoff';
+import { ElMessage } from 'element-plus';
 
 const router = useRouter(); // 新增: 初始化 router
 
@@ -113,7 +133,21 @@ const handleDropdownCommand = (command) => {
   dropdownCommand.value = command;
   if (command === 'logout') {
     // 处理退出登录逻辑
+    userStore.clearUser(); // 添加: 清除用户信息
     router.push('/login'); // 新增: 路由跳转到登录页面
+  } else if (command === 'logoff') { // 新增: 处理注销逻辑
+    // 调用注销API
+    logoffApi(userStore.userInfo.id).then(response => {
+      if (response.data.code === 1) {
+        router.push('/login'); // 路由跳转到登录页面
+        ElMessage.success('注销成功');
+        userStore.clearUser(); // 清除用户信息
+      } else {
+        ElMessage.error('注销失败');
+      }
+    }).catch(error => {
+      ElMessage.error('注销失败');
+    });
   }
 };
 
